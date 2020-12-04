@@ -1,0 +1,42 @@
+const functions = require('firebase-functions');
+const Express = require('express');
+const session = require('express-session');
+
+const app = Express();
+app.use(Express.json());
+app.use(Express.urlencoded({ extended: true }));
+app.use(session({
+  secret: 'testSecret',
+  resave: true,
+  saveUninitialized: true,
+  cookie: { maxAge: 100 * 1000 },
+}));
+console.log('[MESSAGE] Server init....');
+
+const AuthRouter = require('./routes/auth');
+const AdminRouter = require('./routes/admin');
+const AdminProductRouter = require('./routes/adminProduct');
+const ProductRouter = require('./routes/products');
+const AdminOrderRouter = require('./routes/adminOrders');
+const CartRouter = require('./routes/cart');
+const OrderRouter = require('./routes/order');
+const PayRouter = require('./routes/pay');
+const checkTokenMiddleware = require('./middleware/checkToken');
+
+app.use('/auth', AuthRouter);
+app.use('/admin', AdminRouter);
+app.use('/admin/product', AdminProductRouter);
+app.use('/admin/order', AdminOrderRouter);
+app.use('/products', ProductRouter);
+app.use('/cart', CartRouter);
+app.use('/order', OrderRouter);
+app.use('/pay', PayRouter);
+
+exports.app = functions.https.onRequest(app);
+// // Create and Deploy Your First Cloud Functions
+// // https://firebase.google.com/docs/functions/write-firebase-functions
+//
+// exports.helloWorld = functions.https.onRequest((request, response) => {
+//   functions.logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// })
