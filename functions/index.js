@@ -1,8 +1,20 @@
 const functions = require('firebase-functions');
 const Express = require('express');
 const session = require('express-session');
+const cors = require('cors');
 
 const app = Express();
+app.use(cors({
+  origin: [
+    '*',
+    'http://127.0.0.1:3000',
+    'http://localhost:3000',
+  ],
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  credentials: true,
+}));
+// app.use(cors());
+// app.options('*', cors());
 app.use(Express.json());
 app.use(Express.urlencoded({ extended: true }));
 app.use(session({

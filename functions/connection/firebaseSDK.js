@@ -11,8 +11,6 @@ Firebase.initializeApp({
   messagingSenderId: process.env.MESSAGINGSENDERID,
 });
 
-// if (!env.production) {
-Firebase.auth().useEmulator('http://localhost:9099/');
-// }
+// Firebase.auth().useEmulator('http://localhost:9099/');
 
 module.exports = Firebase;

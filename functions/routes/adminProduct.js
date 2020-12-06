@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
     productList.push({ id: productRef, ...data });
 
     res.json({
-      succuss: true,
+      success: true,
       message: '已建立產品',
       id: productRef.id,
     });
@@ -68,7 +68,7 @@ router.put('/:id', async ({ body: { data }, params: { id } }, res) => {
     }
 
     res.json({
-      succuss: true,
+      success: true,
       message: '已更新產品',
       id,
     });
@@ -97,7 +97,7 @@ router.delete('/:id', async ({ params: { id } }, res) => {
     }
 
     res.json({
-      succuss: true,
+      success: true,
       message: '已刪除產品',
       id,
     });
@@ -109,10 +109,15 @@ router.delete('/:id', async ({ params: { id } }, res) => {
   }
 });
 
-router.get('/all', (req, res) => {
+router.get('/all', async (req, res) => {
+  const returnList = [];
+  const productSnapshot = (await productDB.get()).docs;
+
+  productSnapshot.forEach((item) => returnList.push(item.data()));
+
   res.json({
     success: true,
-    products: [...productList],
+    products: [...returnList],
     pagination: {
       total_pages: 1,
       current_page: 1,
