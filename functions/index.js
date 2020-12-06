@@ -16,21 +16,25 @@ console.log('[MESSAGE] Server init....');
 const AuthRouter = require('./routes/auth');
 const AdminRouter = require('./routes/admin');
 const AdminProductRouter = require('./routes/adminProduct');
-const ProductRouter = require('./routes/products');
+const AdminCouponRouter = require('./routes/adminCoupon');
 const AdminOrderRouter = require('./routes/adminOrders');
+const ProductRouter = require('./routes/products');
 const CartRouter = require('./routes/cart');
 const OrderRouter = require('./routes/order');
 const PayRouter = require('./routes/pay');
+const CouponRouter = require('./routes/coupon');
 const checkTokenMiddleware = require('./middleware/checkToken');
 
 app.use('/auth', AuthRouter);
 app.use('/admin', AdminRouter);
 app.use('/admin/product', AdminProductRouter);
+app.use('/admin/coupon', AdminCouponRouter);
 app.use('/admin/order', AdminOrderRouter);
 app.use('/products', ProductRouter);
 app.use('/cart', CartRouter);
 app.use('/order', OrderRouter);
 app.use('/pay', PayRouter);
+app.use('/coupon', CouponRouter);
 
 exports.app = functions.https.onRequest(app);
 // // Create and Deploy Your First Cloud Functions

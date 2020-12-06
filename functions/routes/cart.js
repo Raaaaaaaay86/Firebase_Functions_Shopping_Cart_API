@@ -77,25 +77,34 @@ router.delete('/', (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { carts } = (await cartDB.get()).docs[0].data();
-    const productInfo = {};
+    const { carts, coupon_enabled, coupon } = (await cartDB.get()).docs[0].data();
+    const productTable = {};
 
     const productIdList = [];
     carts.forEach((cart) => productIdList.push(cart.product_id));
 
     const products = await productDB.where('id', 'in', productIdList).get();
     products.forEach((product) => {
-      productInfo[product.data().id] = product.data();
+      productTable[product.data().id] = product.data();
     });
 
-    const data = carts.map((el) => ({
-      ...el,
-      product: productInfo[el.product_id],
+    const data = carts.map((cartInfo) => ({
+      ...cartInfo,
+      product: productTable[cartInfo.product_id],
     }));
 
-    let totalPrice = 0;
+    let origin_total = 0;
     data.forEach((cart) => {
-      totalPrice += (cart.qty * cart.product.price);
+      origin_total += (cart.qty * cart.product.price);
+    });
+
+    let final_total = 0;
+    data.forEach((cart) => {
+      if (coupon_enabled) {
+        final_total += (cart.qty * Math.round(cart.product.price * (coupon.percent / 100)));
+      } else {
+        final_total = origin_total;
+      }
     });
 
     res.json({
@@ -103,7 +112,8 @@ router.get('/', async (req, res) => {
       data: {
         carts: data,
       },
-      totalPrice,
+      origin_total,
+      final_total,
     });
   } catch (error) {
     console.log(error);
