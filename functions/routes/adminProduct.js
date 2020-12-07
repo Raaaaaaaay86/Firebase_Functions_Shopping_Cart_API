@@ -1,10 +1,22 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable camelcase */
-const { raw } = require('express');
-const { query } = require('express');
 const Express = require('express');
+
+const { Storage } = require('@google-cloud/storage');
+
+const UUID = require('uuid-v4');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const Busboy = require('busboy');
+
 const admin = require('../connection/firebaseAdmin');
-const Paginate = require('../helper/paginate');
+
+const gcconfig = {
+  projectId: 'shop-admin-3bc87',
+  keyFilename: './ServiceKey.json',
+};
+const storage = new Storage(gcconfig);
 
 const router = Express.Router(); // path: '/product'
 const productDB = admin.firestore().collection('products');
@@ -152,6 +164,54 @@ router.get('/', async (req, res) => {
     res.json({
       succuss: false,
     });
+  }
+});
+
+router.post('/uploadImage', async (req, res) => {
+  try {
+    const busboy = new Busboy({ headers: req.headers });
+    const uuid = UUID();
+    let upload = {};
+    console.log('uuuid', uuid);
+
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+      console.log(`File [${fieldname}] filename: ${filename}, encoding: ${encoding}, mimetype: ${mimetype}`);
+      const filePath = path.join(os.tmpdir(), filename);
+      upload = { file: filename, type: mimetype, path: filePath };
+      console.log(filePath);
+      file.pipe(fs.createWriteStream(filePath));
+    });
+
+    busboy.on('finish', async () => {
+      const bucket = storage.bucket('shop-admin-3bc87.appspot.com');
+      bucket.upload(
+        upload.path,
+        {
+          uploadType: 'media',
+          metadata: {
+            metadata: {
+              contentType: upload.type,
+              firebaseStorageDownloadTokens: uuid,
+            },
+          },
+        },
+        (err, uploadedFile) => {
+          if (!err) {
+            res.json({
+              success: true,
+              imageUrl: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(uploadedFile.name)}?alt=media&token=${uuid}`,
+            });
+          } else {
+            throw new Error();
+          }
+        },
+      );
+    });
+
+    busboy.end(req.rawBody);
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
   }
 });
 

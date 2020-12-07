@@ -32,7 +32,11 @@ router.put('/:id', async (req, res) => {
   try {
     await admin.firestore().runTransaction(async (tx) => {
       const updateCoupon = await tx.get(couponDB.doc(req.params.id));
+
       if (!updateCoupon.data()) return Promise.reject(new Error());
+
+      data.due_date = new Date(data.due_date).getTime();
+
       tx.update(couponDB.doc(req.params.id), data);
       return Promise.resolve(true);
     });
@@ -85,6 +89,32 @@ router.get('/', async (req, res) => {
       success: true,
       coupons: returnList,
       pagination,
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: '頁面不存在',
+    });
+  }
+});
+
+router.get('/all', async (req, res) => {
+  try {
+    const couponList = (await couponDB.get()).docs;
+
+    const returnList = [];
+    couponList.forEach((item) => returnList.push(item.data()));
+
+    res.json({
+      success: true,
+      coupons: returnList,
+      pagination: {
+        total_pages: 1,
+        current_page: 1,
+        has_pre: false,
+        has_next: false,
+        category: null,
+      },
     });
   } catch (error) {
     res.json({
