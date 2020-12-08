@@ -83,7 +83,6 @@ router.get('/', async (req, res) => {
 
 router.get('/:order_id', async (req, res) => {
   const { order_id } = req.params;
-  console.log(order_id);
   try {
     const order = (await orderDB.where('id', '==', order_id).get()).docs[0].data();
 

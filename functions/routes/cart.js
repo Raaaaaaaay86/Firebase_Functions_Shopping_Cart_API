@@ -9,32 +9,33 @@ const cartDB = admin.firestore().collection('cart');
 const productDB = admin.firestore().collection('products');
 
 router.post('/', async (req, res) => {
-  const { product_id, qty } = req.body.data;
+  const { product_id } = req.body.data;
+  const qty = parseInt(req.body.data.qty, 10);
   const uuid = generateId();
 
-  admin.firestore().runTransaction(async (tx) => {
-    const querySnapshot = await cartDB.get();
-    const cartRef = cartDB.doc();
-
-    if (querySnapshot.empty) {
-      tx.set(cartRef, { carts: [{ product_id, qty, id: uuid }] });
-      return;
-    }
-
-    const cart = querySnapshot.docs[0].data().carts;
-    const cartId = querySnapshot.docs[0].id;
-    const index = cart.findIndex((product) => product.product_id === product_id);
-
-    if (index !== -1) {
-      cart[index].qty += qty;
-    } else {
-      cart.push({ product_id, qty, id: uuid });
-    }
-
-    tx.set(cartDB.doc(cartId), { carts: cart });
-  });
-
   try {
+    await admin.firestore().runTransaction(async (tx) => {
+      const querySnapshot = await cartDB.get();
+      const cartRef = cartDB.doc();
+
+      if (querySnapshot.empty) {
+        tx.set(cartRef, { carts: [{ product_id, qty, id: uuid }] });
+        return;
+      }
+
+      const cart = querySnapshot.docs[0].data().carts;
+      const cartId = querySnapshot.docs[0].id;
+      const index = cart.findIndex((product) => product.product_id === product_id);
+
+      if (index !== -1) {
+        cart[index].qty = parseInt(cart[index].qty, 10) + qty;
+      } else {
+        cart.push({ product_id, qty, id: uuid });
+      }
+
+      tx.set(cartDB.doc(cartId), { carts: cart });
+    });
+
     res.json({
       success: true,
       message: '已加入購物車',
@@ -48,10 +49,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/', (req, res) => {
-  const { id } = req.body;
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    admin.firestore().runTransaction(async (tx) => {
+    await admin.firestore().runTransaction(async (tx) => {
       const cart = (await cartDB.get()).docs[0].data().carts;
       const cartId = (await cartDB.get()).docs[0].id;
 
@@ -77,40 +78,47 @@ router.delete('/', (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { carts, coupon_enabled, coupon } = (await cartDB.get()).docs[0].data();
-    const productTable = {};
-
-    const productIdList = [];
-    carts.forEach((cart) => productIdList.push(cart.product_id));
-
-    const products = await productDB.where('id', 'in', productIdList).get();
-    products.forEach((product) => {
-      productTable[product.data().id] = product.data();
-    });
-
-    const data = carts.map((cartInfo) => ({
-      ...cartInfo,
-      product: productTable[cartInfo.product_id],
-    }));
-
-    let origin_total = 0;
-    data.forEach((cart) => {
-      origin_total += (cart.qty * cart.product.price);
-    });
-
+    const cartDoc = (await cartDB.get()).docs[0];
     let final_total = 0;
-    data.forEach((cart) => {
-      if (coupon_enabled) {
-        final_total += (cart.qty * Math.round(cart.product.price * (coupon.percent / 100)));
-      } else {
-        final_total = origin_total;
-      }
-    });
+    let origin_total = 0;
+    let cartList = [];
+
+    if (!cartDoc || cartDoc.data().carts.length !== 0) {
+      console.log('IIN');
+      const { carts, coupon_enabled, coupon } = cartDoc.data();
+      const productTable = {};
+
+      const productIdList = [];
+      carts.forEach((cart) => productIdList.push(cart.product_id));
+      console.log(productIdList);
+
+      const products = await productDB.where('id', 'in', productIdList).get();
+      products.forEach((product) => {
+        productTable[product.data().id] = product.data();
+      });
+
+      cartList = carts.map((cartInfo) => ({
+        ...cartInfo,
+        product: productTable[cartInfo.product_id],
+      }));
+
+      cartList.forEach((cart) => {
+        origin_total += (cart.qty * cart.product.price);
+      });
+
+      cartList.forEach((cart) => {
+        if (coupon_enabled) {
+          final_total += (cart.qty * Math.round(cart.product.price * (coupon.percent / 100)));
+        } else {
+          final_total = origin_total;
+        }
+      });
+    }
 
     res.json({
       success: true,
       data: {
-        carts: data,
+        carts: cartList,
       },
       origin_total,
       final_total,

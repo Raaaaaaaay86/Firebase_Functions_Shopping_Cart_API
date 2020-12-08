@@ -31,23 +31,40 @@ router.get('/all', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
+    const { cat, page } = req.query;
     let querySnapshot;
     const productList = [];
 
-    if (!req.query.cat) {
+    if (cat === 'undefined') {
       querySnapshot = await productDB.get();
     } else {
-      querySnapshot = await productDB.where('category', '==', req.query.cat).get();
+      querySnapshot = await productDB.where('category', '==', cat).get();
     }
-
     querySnapshot.forEach((doc) => productList.push(doc.data()));
 
-    const { pageContent, pagination } = Paginate(productList, req.query.page);
+    const { pageContent, pagination } = Paginate(productList, page);
 
     res.json({
       success: true,
       products: pageContent,
       pagination,
+    });
+  } catch (error) {
+    res.json({
+      succuss: false,
+      message: '頁面不存在',
+    });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const product = (await productDB.where('id', '==', id).get()).docs[0].data();
+
+    res.json({
+      success: true,
+      product,
     });
   } catch (error) {
     res.json({

@@ -28,4 +28,23 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/all', async (req, res) => {
+  const returnList = [];
+  const orderSnapshot = (await orderDB.get()).docs;
+
+  orderSnapshot.forEach((item) => returnList.push(item.data()));
+
+  res.json({
+    success: true,
+    products: [...returnList],
+    pagination: {
+      total_pages: 1,
+      current_page: 1,
+      has_pre: false,
+      has_next: false,
+      category: null,
+    },
+  });
+});
+
 module.exports = router;

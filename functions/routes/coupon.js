@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
 
       if (!coupon) return Promise.reject(new Error());
 
-      tx.update(cartDB.doc(cartId), { coupon });
+      tx.update(cartDB.doc(cartId), { coupon, coupon_enabled: true });
       return Promise.resolve(true);
     });
 
