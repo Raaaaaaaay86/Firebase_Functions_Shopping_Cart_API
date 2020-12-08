@@ -84,7 +84,6 @@ router.get('/', async (req, res) => {
     let cartList = [];
 
     if (!cartDoc || cartDoc.data().carts.length !== 0) {
-      console.log('IIN');
       const { carts, coupon_enabled, coupon } = cartDoc.data();
       const productTable = {};
 

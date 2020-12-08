@@ -10,44 +10,55 @@ const productDB = admin.firestore().collection('products');
 
 router.post('/', async (req, res) => {
   const { message, user } = req.body.data;
+  const newOrderRef = orderDB.doc();
+  const productTable = {};
+  let origin_total = 0;
+  let final_total = 0;
+  let cartList = [];
 
   try {
-    admin.firestore().runTransaction(async (tx) => {
+    await admin.firestore().runTransaction(async (tx) => {
       const productIdList = [];
-      const { carts } = (await tx.get(cartDB)).docs[0].data();
+      const { carts, coupon, coupon_enabled } = (await tx.get(cartDB)).docs[0].data();
       carts.forEach((item) => productIdList.push(item.product_id));
 
-      const productTable = {};
       const products = await productDB.where('id', 'in', productIdList).get();
       products.forEach((product) => {
         productTable[product.data().id] = product.data();
       });
 
-      const detailCarts = carts.map((el) => ({
-        ...el,
-        product: productTable[el.product_id],
+      cartList = carts.map((cartInfo) => ({
+        ...cartInfo,
+        product: productTable[cartInfo.product_id],
       }));
 
-      let total = 0;
-      detailCarts.forEach((cart) => {
-        total += (cart.qty * cart.product.price);
+      cartList.forEach((cart) => {
+        origin_total += (cart.qty * cart.product.price);
       });
 
-      const newOrderRef = orderDB.doc();
+      cartList.forEach((cart) => {
+        if (coupon_enabled) {
+          final_total += (cart.qty * Math.round(cart.product.price * (coupon.percent / 100)));
+        } else {
+          final_total = origin_total;
+        }
+      });
 
       tx.set(newOrderRef, {
         create_at: new Date().getTime(),
+        products: [...cartList],
         id: newOrderRef.id,
         is_paid: false,
-        products: [...detailCarts],
+        origin_total,
+        final_total,
         message,
-        total,
         user,
       });
     });
 
     res.json({
       success: true,
+      orderId: newOrderRef.id,
     });
   } catch (error) {
     console.log(error);
