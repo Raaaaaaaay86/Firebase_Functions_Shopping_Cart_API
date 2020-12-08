@@ -19,9 +19,9 @@ router.post('/', async (req, res) => {
   try {
     await admin.firestore().runTransaction(async (tx) => {
       const productIdList = [];
-      const { carts, coupon, coupon_enabled } = (await tx.get(cartDB)).docs[0].data();
+      const cartDoc = await tx.get(cartDB);
+      const { carts, coupon, coupon_enabled } = cartDoc.docs[0].data();
       carts.forEach((item) => productIdList.push(item.product_id));
-
       const products = await productDB.where('id', 'in', productIdList).get();
       products.forEach((product) => {
         productTable[product.data().id] = product.data();
@@ -54,6 +54,7 @@ router.post('/', async (req, res) => {
         message,
         user,
       });
+      tx.delete(cartDB.doc(cartDoc.docs[0].id));
     });
 
     res.json({

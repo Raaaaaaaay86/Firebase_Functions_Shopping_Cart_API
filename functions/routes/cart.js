@@ -78,13 +78,15 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const cartDoc = (await cartDB.get()).docs[0];
+    const cartDocList = (await cartDB.get()).docs;
     let final_total = 0;
     let origin_total = 0;
     let cartList = [];
 
-    if (!cartDoc || cartDoc.data().carts.length !== 0) {
-      const { carts, coupon_enabled, coupon } = cartDoc.data();
+    console.log((await cartDB.get()).docs.length);
+
+    if (cartDocList.length !== 0) {
+      const { carts, coupon_enabled, coupon } = cartDocList[0].data();
       const productTable = {};
 
       const productIdList = [];
