@@ -7,7 +7,7 @@ const app = Express();
 app.use(cors({
   origin: [
     '*',
-    'https://ray-nuxt-shop.herokuapp.com/',
+    'https://ray-nuxt-shop.herokuapp.com',
     'http://127.0.0.1:3000',
     'http://localhost:3000',
   ],

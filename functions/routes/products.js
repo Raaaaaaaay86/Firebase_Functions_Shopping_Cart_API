@@ -8,7 +8,7 @@ const productDB = admin.firestore().collection('products');
 
 router.get('/all', async (req, res) => {
   try {
-    const querySnapshot = await productDB.get();
+    const querySnapshot = await productDB.orderBy('category').get();
     const productList = [];
 
     querySnapshot.forEach((doc) => productList.push(doc.data()));
@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
     const productList = [];
 
     if (cat === 'undefined') {
-      querySnapshot = await productDB.get();
+      querySnapshot = await productDB.orderBy('category').get();
     } else {
       querySnapshot = await productDB.where('category', '==', cat).get();
     }
