@@ -91,12 +91,14 @@ router.get('/', async (req, res) => {
 
       const productIdList = [];
       carts.forEach((cart) => productIdList.push(cart.product_id));
-      console.log(productIdList);
+      console.log(productIdList.length);
 
-      const products = await productDB.where('id', 'in', productIdList).get();
-      products.forEach((product) => {
-        productTable[product.data().id] = product.data();
-      });
+      if (productIdList.length !== 0) {
+        const products = await productDB.where('id', 'in', productIdList).get();
+        products.forEach((product) => {
+          productTable[product.data().id] = product.data();
+        });
+      }
 
       cartList = carts.map((cartInfo) => ({
         ...cartInfo,
